@@ -1,0 +1,46 @@
+﻿@inherits LayoutComponentBase
+@using Blazorise
+
+<PageTitle>MehmetUysalBlazor</PageTitle>
+
+<div class="page">
+    <div class="sidebar @sidebarClass">
+        <NavMenu />
+    </div>
+    <div class="sidebar-btn @btnClass" @onclick="OnClick">
+        <span class="material-symbols-outlined">
+            arrow_back_ios
+        </span>
+    </div>
+
+    <main class="main">
+        <div class="main-upper">
+            <a href="">Project</a>
+            <a href="https://github.com/uys2000">Github</a>
+            <a href="https://www.linkedin.com/in/uys2000/">Linkedin</a>
+            <a href="https://mehmetuysal.dev">WebSite</a>
+        </div>
+        <article class="content">
+            @Body
+        </article>
+    </main>
+</div>
+@code
+{
+    private bool isOpen;
+    private string btnClass = "";
+    private string sidebarClass= "";
+
+    private void OnClick()
+    {
+        isOpen = !isOpen;
+        if(isOpen){
+            btnClass = "";
+            sidebarClass = "";
+        }
+        else{
+            btnClass = "sidebar-btn-closed";
+            sidebarClass = "sidebar-closed";
+        }
+    }
+}

@@ -1,0 +1,101 @@
+@using ClientApplication.Services.FixtureService
+@using ClientApplication.Services.ObjectService
+@using ClientApplication.Services.DebitService
+@using ClientApplication.Models
+@using Blazorise.DataGrid
+@using Blazorise
+<DataGrid   
+    TItem="Fixture"
+    Data="@Fixtures"
+    @bind-SelectedRow="@Fixture"
+    Editable
+    Responsive
+    ShowPager
+    RowInserting="OnRowInsertingAsync"
+    RowUpdating="OnRowUpdatingAsync"
+    RowRemoving="OnRowRemovingAsync"
+    RowInserted="OnRowInserted"
+    RowUpdated="OnRowUpdated"
+    RowRemoved="OnRowRemoved"
+    DetailRowStartsVisible="false"
+    DetailRowTrigger='@((e) => e.Item.Notes is not null && e.Item.Notes != "" && e.Item.Id == Fixture?.Id)'
+    EditMode="DataGridEditMode.Form"
+    >
+    
+    <DataGridColumns>
+        <DataGridColumn Field="@nameof(Fixture.FixtureId)" Caption="Fixture Id" Editable/>
+        <DataGridColumn Field="@nameof(Fixture.Type)" Caption="Type" Editable >
+            <EditTemplate >
+                @{
+                var Type = (string) context.CellValue;                
+                <Select TValue="string"
+                    SelectedValue="Type"
+                    SelectedValueChanged="@( v => context.CellValue = v)">
+                    <SelectItem TValue="string" Value='@("Computer")'>Computer</SelectItem>
+                    <SelectItem TValue="string" Value='@("Monitor")'>Monitor</SelectItem>
+                    <SelectItem TValue="string" Value='@("Phone")'>Phone</SelectItem>
+                </Select>
+             }
+            </EditTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(Fixture.Brand)" Caption="Brand" Editable />
+        <DataGridColumn Field="@nameof(Fixture.Model)" Caption="Model" Editable />        
+    </DataGridColumns>
+    <DetailRowTemplate>
+        <div>Notes : @context.Notes</div>
+    </DetailRowTemplate>
+    <ButtonRowTemplate>
+        <Button Style="margin:5px 0;" Color="Color.Success" Clicked="context.NewCommand.Clicked">New</Button>
+        <Button Style="margin:5px 2px;" Color="Color.Primary" Disabled="(Fixture?.FixtureId is null)" Clicked="context.EditCommand.Clicked">Edit</Button>
+        @{
+            var ls = $"Fixture/{Fixture?.Id.ToString()}";
+            <Button Style="margin:5px 2px;" Color="Color.Primary" Disabled="(Fixture?.FixtureId is null)" Type="ButtonType.Link" To="@ls">Details</Button>
+        }
+        <Button Style="margin:5px 2px;" Color="Color.Danger" Disabled="(Fixture?.FixtureId is null)" Clicked="context.DeleteCommand.Clicked">Delete</Button>
+    </ButtonRowTemplate>
+</DataGrid>
+
+@code{
+    [Parameter, EditorRequired]
+    public Fixtures Fixtures {get; set;} = new Fixtures{};
+
+    [Parameter, EditorRequired]
+    public EventCallback<Fixtures> SetFixtures {get; set;}
+
+    private Fixture Fixture = new Fixture();
+
+    private async void SetFixturesTrigger(){
+        if(this.Fixtures is not null)
+            await SetFixtures.InvokeAsync(Fixtures);
+    }
+    public async Task OnRowInsertingAsync(CancellableRowChange<Fixture, Dictionary<string, object>> e){
+        var fixture = ObjectService.ToObject<Fixture>(e.Values);
+        if(fixture.Type is null) fixture.Type = "Computer";
+        var p = await FixtureService.createFixture(fixture, Fixtures);
+        if (p is null) e.Cancel = true;
+    }
+    public async Task OnRowUpdatingAsync(CancellableRowChange<Fixture, Dictionary<string, object>> e){
+        var fixture = ObjectService.ToObject<Fixture>(e.Values);
+        fixture.Notes = e.Item.Notes;
+        var statusCode = await FixtureService.updateFixture(fixture, Fixtures);
+        if(statusCode.ToString() != "OK") e.Cancel = true;
+    }
+    public async Task OnRowRemovingAsync(CancellableRowChange<Fixture> e){
+        var statusCodeDebit = await DebitService.deleteDebitByFId(e.Item.Id);
+        if(statusCodeDebit.ToString() != "OK") e.Cancel = true;
+        else {
+            var statusCode = await FixtureService.deleteFixture(e.Item.Id);
+            if(statusCode.ToString() != "OK") e.Cancel = true;
+        }
+    }
+    public void OnRowInserted(SavedRowItem<Fixture, Dictionary<string, object>> e){
+        if(e.Item.Type is null) e.Item.Type = "Computer"; // when type is not changed it comes null so we are setting it to default
+        SetFixturesTrigger();
+    }
+    public void OnRowUpdated(SavedRowItem<Fixture, Dictionary<string, object>> e){
+        SetFixturesTrigger();
+    }
+    public void OnRowRemoved(Fixture e){
+        SetFixturesTrigger();
+    }
+}

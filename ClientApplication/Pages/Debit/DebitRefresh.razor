@@ -1,0 +1,71 @@
+@using ClientApplication.Services.PersonnelService
+@using ClientApplication.Services.FixtureService
+@using ClientApplication.Services.DebitService
+@using ClientApplication.Services.StoreService
+@using ClientApplication.Models
+@using Blazorise
+@using System.Text.Json
+
+<div class="top">
+    <div>
+        <Button Color="Color.Primary" Clicked="@RefreshDataEvent" Loading="@IsLoading">
+            <LoadingTemplate>
+                Loading...
+            </LoadingTemplate>
+            <ChildContent>
+                Refresh Fixtures
+            </ChildContent>
+        </Button>
+    </div>
+</div>
+
+@code
+{
+    private bool IsLoading;
+
+    [Parameter, EditorRequired]
+    public Debits Debits {get; set;} = new Debits{};
+    [Parameter, EditorRequired]
+    public Fixtures Fixtures {get; set;} = new Fixtures{};
+    [Parameter, EditorRequired]
+    public Personnels Personnels {get; set;} = new Personnels{};
+
+    [Parameter, EditorRequired]
+    public EventCallback<Debits> SetDebits {get; set;}
+    [Parameter, EditorRequired]
+    public EventCallback<Fixtures> SetFixtures {get; set;}
+    [Parameter, EditorRequired]
+    public EventCallback<Personnels> SetPersonnels {get; set;}
+
+    private async void SetDebitsTrigger(Debits debits){
+        if(debits.Count > 0)
+            await SetDebits.InvokeAsync(debits);
+    }
+    private async void SetFixturesTrigger(Fixtures fixtures){
+        if(fixtures.Count > 0)
+            await SetFixtures.InvokeAsync(fixtures);
+    }
+    private async void SetPersonnelsTrigger(Personnels personnels){
+        if(personnels.Count > 0)
+            await SetPersonnels.InvokeAsync(personnels);
+    }
+    private async Task RefreshDataEvent(){
+        IsLoading = true;
+        
+        Debits = await DebitService.getDebits();
+        SetDebitsTrigger(Debits);
+        Fixtures = await FixtureService.getFixtures();
+        SetFixturesTrigger(Fixtures);
+        Personnels = await PersonnelService.getPersonnels();
+        SetPersonnelsTrigger(Personnels);
+        
+        IsLoading = false;
+        StateHasChanged();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+            if(Debits.Count==0 || Fixtures.Count==0 || Personnels.Count==0) await RefreshDataEvent();
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}

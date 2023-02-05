@@ -1,0 +1,32 @@
+@page "/Debit/{Index?}"
+@using ClientApplication.Pages.Debit
+@using ClientApplication.Models
+
+<div class="mid">
+    <DebitRefresh Debits="@Debits" Fixtures="@Fixtures" Personnels="@Personnels" SetPersonnels="@SetPersonnels" SetFixtures="@SetFixtures" SetDebits="@SetDebits"/>
+    <DebitGrid Debits="Debits" Fixtures="@Fixtures" Personnels="@Personnels" SetDebits="@SetDebits"/>
+</div>
+
+@code{
+
+    [Parameter]
+    public string Index { get; set; } = "";
+    
+    public Debits Debits = new Debits{};
+    public Fixtures Fixtures = new Fixtures{};
+    public Personnels Personnels = new Personnels{};
+
+    protected void SetDebits(Debits deibts){
+        Debits = deibts;
+        Console.WriteLine($"Debits Updated {deibts.Count}");
+    }
+    protected void SetFixtures(Fixtures fixtures){
+        Fixtures = fixtures;
+        Console.WriteLine($"Fixtures Updated {fixtures.Count}");
+    }
+    protected void SetPersonnels(Personnels personnels){
+        Personnels = personnels;
+        Console.WriteLine($"Personnels Updated {personnels.Count}");
+    }
+}
+

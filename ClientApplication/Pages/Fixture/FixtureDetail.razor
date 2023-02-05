@@ -1,0 +1,227 @@
+@using ClientApplication.Services.FixtureService
+@using ClientApplication.Services.DebitService
+@using ClientApplication.Models
+@using Blazorise.Components
+@using Blazorise
+
+@inject NavigationManager NavManager
+
+
+<Modal @ref="ModalRef" Opening="@LoadModal" Closing="@OnModalClosing" >
+    <ModalContent Centered>
+        <ModalHeader>
+            <ModalTitle>Fixture Details</ModalTitle>
+            <CloseButton />
+        </ModalHeader>
+        <ModalBody>
+            <Field>
+                <FieldLabel>Fixture ID</FieldLabel>
+                <TextEdit Placeholder="Enter Fixture ID..." @bind-Text="@FixtureId" />
+            </Field>
+            <Fields Horizontal>
+                <Field>
+                    <FieldLabel>Debited Personnel Name</FieldLabel>
+                    @{
+                        var p = Personnel.Name + " " + Personnel.Surname;
+                        <TextEdit Placeholder="" @bind-Text="@p" Disabled="true" />
+                    }
+                </Field>
+                <Field>
+                    <FieldLabel>Debited Personnel ID</FieldLabel>
+                    <TextEdit Placeholder="" @bind-Text="@Personnel.PersonnelId" Disabled="true" />
+                </Field>
+                <Field>
+                    <FieldLabel>Fixture Location</FieldLabel>
+                    @{
+                        var p = Debit.IsTaken ? "On Personnel" : "On Company" ;
+                        <TextEdit Placeholder="" @bind-Text="@p" Disabled="true" />
+                    }
+                </Field>
+            </Fields>    
+            <Fields Horizontal>
+                <Field>
+                    <FieldLabel>New Debited Personnel</FieldLabel>
+                    <Autocomplete TItem="Personnel"
+                            TValue="Personnel"
+                            Data="@Personnels"
+                            TextField="@(( item ) => item.Name + ' ' + item.Surname)"
+                            ValueField="@(( item ) => item)"
+                            Filter="AutocompleteFilter.StartsWith"
+                            @bind-SelectedValue="TPersonnel"
+                            @bind-SelectedText="TText"
+                            FreeTyping
+                            CustomFilter="@(( item, searchValue ) => (item?.Name + item?.Surname + item?.PersonnelId).IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )"
+                            @ref="AutoComplete">
+                        <NotFoundContent> Sorry... @context was not found! :( </NotFoundContent>
+                    </Autocomplete>
+                </Field>
+                <Field>
+                    <FieldLabel>New Fixture Location</FieldLabel>
+                    <Select TValue="bool" @bind-SelectedValue="@IsTaken">
+                        <SelectItem Value="true">On Personnel</SelectItem>
+                        <SelectItem Value="false">On Company</SelectItem>
+                    </Select>
+                </Field>    
+            </Fields>
+
+            <Field>
+                <FieldLabel>Notes</FieldLabel>
+                <MemoEdit Rows="5" Placeholder="Enter Notes..." @bind-Text="@Notes"/>
+            </Field>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@CloseModal">Close</Button>
+            <Button Color="Color.Primary" Clicked="@SaveModal">Save Changes</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code{
+    private Modal? ModalRef;
+    private Autocomplete<Personnel,Personnel>? AutoComplete;
+    private int RepeatSheld = 0;
+
+    private string FixtureId = "";
+    private string? Notes = "";
+    private bool IsTaken = false;
+    public int IntIndex = -1;
+    private string? TText = "";
+
+    private Debit Debit { get; set; } = new Debit();
+    private Fixture Fixture { get; set; } = new Fixture();
+    private Personnel Personnel { get; set; } = new Personnel(); //To show personnel
+    private Personnel TPersonnel { get; set; } = new Personnel();//To change personnel
+    
+    [Parameter]
+    public string Index {get; set;} = "";
+    
+    [Parameter, EditorRequired]
+    public Fixtures Fixtures {get; set;} = new Fixtures{};
+    [Parameter, EditorRequired]
+    public Personnels Personnels {get; set;} = new Personnels{};
+    private Personnels __Personnels = new Personnels{};
+
+    [Parameter, EditorRequired]
+    public EventCallback<Personnels> SetPersonnels {get; set;}
+    
+    private async Task SetPersonnelsTrigger(){
+        if(this.Personnels is not null)
+            await SetPersonnels.InvokeAsync(Personnels);
+    }
+
+    private Task OnModalClosing (ModalClosingEventArgs e){
+        IntIndex = -1;
+        NavManager.NavigateTo("/Fixture");
+        Console.WriteLine("------CloseModal------");
+        return Task.CompletedTask;
+    }
+    private async Task LoadModal(ModalOpeningEventArgs e){
+        Console.WriteLine("------LoadModal------");
+        // Load Fixture Details
+        if(Fixtures.Count > 0 ){
+            var fixture = Fixtures.Find(f=>f.Id == IntIndex);
+            if(fixture is not null){
+                Fixture = fixture;
+                if (fixture.FixtureId is not null)
+                    FixtureId = fixture.FixtureId;
+                Notes = fixture.Notes;
+            }
+        }
+        
+        // Get Debit
+        var debit = await DebitService.getDebit(Fixture.Id);
+        if(debit is not null) {
+            Debit = debit;
+            IsTaken = debit.IsTaken;
+        }
+        else Debit = new Debit();
+
+        // Get Personnel Details
+        if(Personnels.Count > 0){
+            if(Debit.PId!=0){
+                var personnel = Personnels.Find(p=>p.Id == Debit.PId);
+                if(personnel is not null) {
+                    Personnel = personnel;
+                    if(AutoComplete is not null)
+                        TPersonnel = AutoComplete.GetItemByValue(personnel);
+                }
+            } else Personnel = new Personnel();
+        }
+        StateHasChanged();
+    }
+    private void CloseModal(){
+        if (ModalRef is not null) ModalRef.Hide();
+    }
+    private async Task SaveModal(){
+        // check fixture changes and save
+        if(Fixture.FixtureId != FixtureId || Fixture.Notes != Notes){
+            Fixture.FixtureId = FixtureId;
+            Fixture.Notes = Notes;
+            var statusCode = await FixtureService.updateFixture(Fixture, Fixtures);
+            if(statusCode.ToString()=="OK")
+                await SetPersonnelsTrigger();
+        }
+
+        // check debit changes and save
+        var debit = new Debit(){
+            FId = Fixture.Id,
+            FixtureId = Fixture.FixtureId, // This will be changed if upper part runs
+            IsTaken = IsTaken
+        };
+        if(Personnel is not null){
+            if(TPersonnel is null){
+                Console.WriteLine("Delete");
+                await DebitService.deleteDebit(Debit.Id);
+            } else if (Personnel.Id != TPersonnel.Id || Debit.IsTaken != IsTaken) {
+                debit.PId = TPersonnel.Id;
+                debit.PersonnelId = TPersonnel.PersonnelId;
+                Console.WriteLine("Update");
+                await DebitService.updateDebit(Debit.Id, debit);
+            }
+        } else {
+            if(TPersonnel is not null){
+                debit.PId = TPersonnel.Id;
+                debit.PersonnelId = TPersonnel.PersonnelId;
+                Console.WriteLine("Create");
+                await DebitService.createDebit(debit);
+            }
+        }
+        TPersonnel = new Personnel();
+        if (ModalRef is not null) await ModalRef.Hide();
+    }
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Personnels.Count()!=0 && Fixtures.Count() !=0){
+            if(Int32.TryParse(Index, out IntIndex)) {
+                if (ModalRef is not null) ModalRef.Show();
+            }
+            else if (ModalRef is not null) ModalRef.Hide();
+        }
+        return base.OnAfterRenderAsync(firstRender);
+    }   
+    protected override Task OnParametersSetAsync()
+    {   
+        // Refresh Modal if Modal loads before Personnels
+        if(__Personnels != Personnels){
+            if(RepeatSheld == 0) RepeatSheld++;
+            else {
+                if(Int32.TryParse(Index, out IntIndex))
+                    if (ModalRef is not null){
+                        var url = NavManager.Uri;
+                        ModalRef.Hide();
+                        NavManager.NavigateTo(url);
+                        ModalRef.Show();
+                    } 
+            }
+            __Personnels = Personnels;
+        }
+        return base.OnParametersSetAsync();
+    }
+}
+
+
+
+    
+
+
+

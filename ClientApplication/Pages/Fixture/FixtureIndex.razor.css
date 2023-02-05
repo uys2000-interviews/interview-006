@@ -1,0 +1,23 @@
+
+.mid{
+    margin-top: 10px;
+}
+.bot{
+    margin-top: 10px;
+    display: flex;
+}
+::deep .table-btn{
+    border: none !important;
+    box-shadow: none;
+    width: 100%;
+    justify-content: start;
+}
+::deep .table-btn-close{
+    border: none !important;
+    box-shadow: none;
+    justify-content: center;
+    padding: 0;
+    width: fit-content;
+    min-width: fit-content;
+    color: red;
+}

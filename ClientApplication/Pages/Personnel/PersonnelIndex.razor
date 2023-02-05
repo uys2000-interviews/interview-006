@@ -1,0 +1,19 @@
+@page "/Personnel"
+@using ClientApplication.Pages.Debit
+@using ClientApplication.Models
+
+<div class="mid">
+    <PersonnelRefresh Personnels="@Personnels" SetPersonnels="@SetPersonnels"/>
+    <PersonnelGrid Personnels="@Personnels" SetPersonnels="@SetPersonnels"/>
+</div>
+
+@code{
+    
+    public Personnels Personnels = new Personnels{};
+
+    protected void SetPersonnels(Personnels personnels){
+        Personnels = personnels;
+        Console.WriteLine($"Personnels Updated {personnels.Count}");
+    }
+}
+

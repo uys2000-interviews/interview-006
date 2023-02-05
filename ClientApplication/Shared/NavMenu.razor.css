@@ -1,0 +1,28 @@
+.upper-side{
+    width: 200px;
+    height: 100%;
+}
+.logo-part{
+    width: 200px;
+    text-align: center;
+}
+.logo-part div:last-child{
+    padding: 20px 0;
+}
+.logo-part img{
+    width: 200px;
+}
+.logo-part span{
+    display: block;
+    cursor:default;
+    font-size: large;
+}
+.menu-part > div > a{
+    justify-items: left;
+    display: flex;
+    width: 200px;
+    margin: 15px 0;
+}
+.menu-part > div > a > span{
+    margin: auto 5px;
+}

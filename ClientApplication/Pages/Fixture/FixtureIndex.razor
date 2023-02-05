@@ -1,0 +1,30 @@
+@page "/Fixture/{Index?}"
+@using ClientApplication.Pages.Fixture
+@using ClientApplication.Models
+
+<div class="mid">
+    <FixtureRefresh Personnels="@Personnels" Fixtures="@Fixtures" SetPersonnels="@SetPersonnels" SetFixtures="@SetFixtures"/>
+    <FixtureGrid Fixtures="@Fixtures" SetFixtures="@SetFixtures"/>
+</div>
+@if(Index != "" && Index != null){
+    <FixtureDetail Index="@Index" Personnels="@Personnels" Fixtures="@Fixtures" SetPersonnels="@SetPersonnels" />
+}
+
+@code{
+
+    [Parameter]
+    public string Index { get; set; } = "";
+    
+    public Fixtures Fixtures = new Fixtures{};
+    public Personnels Personnels = new Personnels{};
+
+    protected void SetFixtures(Fixtures fixtures){
+        Fixtures = fixtures;
+        Console.WriteLine($"Fixtures Updated {fixtures.Count}");
+    }
+    protected void SetPersonnels(Personnels personnels){
+        Personnels = personnels;
+        Console.WriteLine($"Personnels Updated {personnels.Count}");
+    }
+}
+

@@ -1,0 +1,52 @@
+@using ClientApplication.Services.PersonnelService
+@using ClientApplication.Services.FixtureService
+@using ClientApplication.Services.DebitService
+@using ClientApplication.Services.StoreService
+@using ClientApplication.Models
+@using Blazorise
+@using System.Text.Json
+
+<div class="top">
+    <div>
+        <Button Color="Color.Primary" Clicked="@RefreshDataEvent" Loading="@IsLoading">
+            <LoadingTemplate>
+                Loading...
+            </LoadingTemplate>
+            <ChildContent>
+                Refresh Fixtures
+            </ChildContent>
+        </Button>
+    </div>
+</div>
+
+@code
+{
+    private bool IsLoading;
+
+    [Parameter, EditorRequired]
+    public Personnels Personnels {get; set;} = new Personnels{};
+    [Parameter, EditorRequired]
+    public EventCallback<Personnels> SetPersonnels {get; set;}
+
+    private async void SetPersonnelsTrigger(Personnels personnels){
+        if(personnels.Count > 0)
+            await SetPersonnels.InvokeAsync(personnels);
+    }
+    private async Task RefreshDataEvent(){
+        IsLoading = true;
+
+        Personnels = await PersonnelService.getPersonnels();
+        SetPersonnelsTrigger(Personnels);
+        
+        IsLoading = false;
+        StateHasChanged();
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+            if(Personnels.Count == 0) await RefreshDataEvent();
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}
+

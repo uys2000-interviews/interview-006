@@ -1,0 +1,177 @@
+@using ClientApplication.Services.DebitService
+@using ClientApplication.Services.ObjectService
+@using ClientApplication.Models
+@using Blazorise.Components
+@using Blazorise.DataGrid
+@using Blazorise
+<DataGrid   
+    TItem="Debit"
+    Data="@Debits"
+    @bind-SelectedRow="@Debit"
+    Editable
+    Responsive
+    ShowPager
+    RowInserting="OnRowInsertingAsync"
+    RowUpdating="OnRowUpdatingAsync"
+    RowRemoving="OnRowRemovingAsync"
+    RowInserted="OnRowInserted"
+    RowUpdated="OnRowUpdated"
+    RowRemoved="OnRowRemoved"
+    DetailRowStartsVisible="false"
+    EditMode="DataGridEditMode.Form"
+    SubmitFormOnEnter="false"
+    >
+    <DataGridColumns>
+        <DataGridColumn Field="@nameof(Debit.FixtureId)" Caption="Fixture Id" Editable>
+            <EditTemplate>
+                @if(context is not null && context.Item is not null){
+                    var cellValue = context.Item.FixtureId;
+                    var currentFixture = Fixtures.Where(f=>f.FixtureId == cellValue);
+                    var usableFixtures = UnusedFixtures.Concat(currentFixture);
+                    @usableFixtures.Count()
+                    <Autocomplete TItem="Fixture"
+                        TValue="object "
+                        Data="@usableFixtures"
+                        TextField="@(e=>e.FixtureId )"
+                        ValueField="@(e=>e.FixtureId)"
+                        Filter="AutocompleteFilter.StartsWith"
+                        FreeTyping
+                        @bind-SelectedValue="@context.CellValue"
+                        >
+                    </Autocomplete>
+                }
+            </EditTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(Debit.PersonnelId)" Caption="Personnel Id" Editable>
+            <EditTemplate>
+                @{
+                    <Autocomplete TItem="Personnel"
+                        TValue="object"
+                        Data="@Personnels"
+                        TextField="@(e=>e.PersonnelId + ' ' + '(' + e.Name + ' ' +e.Surname +')')"
+                        ValueField="@(e=>e.PersonnelId)"
+                        Filter="AutocompleteFilter.StartsWith"
+                        CustomFilter="@(( item, searchValue ) => (item?.PersonnelId + item?.Name + item?.Surname).IndexOf( searchValue, 0, StringComparison.CurrentCultureIgnoreCase ) >= 0 )"
+                        FreeTyping
+                        @bind-SelectedValue="@context.CellValue"
+                        >
+                    </Autocomplete>
+                }
+            </EditTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(Debit.PersonnelId)" Caption="Personnel Name">
+            <DisplayTemplate>
+                @if(context is not null){
+                    var personnel = Personnels.FirstOrDefault(e=>e.PersonnelId == context.PersonnelId);
+                    @if(personnel is not null){
+                        @(personnel.Name + " " + personnel.Surname);
+                    }
+                }
+            </DisplayTemplate>
+        </DataGridColumn>
+        <DataGridColumn Field="@nameof(Debit.IsTaken)" Caption="Debit Location" Editable>
+            <DisplayTemplate>
+                @if(context is not null){
+                    @(context.IsTaken ? "On Personnel" : "On Companny")
+                }
+            </DisplayTemplate>
+            <EditTemplate >
+                @if(context is not null && context.Item is not null){
+                    var Type = context.Item.IsTaken;                
+                    <Select TValue="bool"
+                        SelectedValue="Type"
+                        SelectedValueChanged="@( v => context.CellValue = v)">
+                        <SelectItem TValue="bool" Value='@(true)'>On Personnel</SelectItem>
+                        <SelectItem TValue="bool" Value='@(false)'>On Company</SelectItem>
+                    </Select>
+                }
+            </EditTemplate>
+        </DataGridColumn>
+    </DataGridColumns>
+    <ButtonRowTemplate>
+        <Button Style="margin:5px 1px;" Color="Color.Success" Clicked="context.NewCommand.Clicked">New</Button>
+        <Button Style="margin:5px 1px;" Color="Color.Primary" Disabled="(Debit?.FixtureId is null)" Clicked="context.EditCommand.Clicked">Edit</Button>
+        <Button Style="margin:5px 1px;" Color="Color.Danger" Disabled="(Debit?.FixtureId is null)" Clicked="context.DeleteCommand.Clicked">Delete</Button>
+    </ButtonRowTemplate>
+</DataGrid>
+
+@code{
+    [Parameter, EditorRequired]
+    public Debits Debits {get; set;} = new Debits{};
+    [Parameter, EditorRequired]
+    public Fixtures Fixtures {get; set;} = new Fixtures{};
+    [Parameter, EditorRequired]
+    public Personnels Personnels {get; set;} = new Personnels{};
+    
+
+    [Parameter, EditorRequired]
+    public EventCallback<Debits> SetDebits {get; set;}
+
+    private Debit Debit = new Debit();
+    public Debits __Debits = new Debits{};
+    public Personnels __Personnels = new Personnels{};
+    public List<Fixture> UnusedFixtures {get; set;} = new Fixtures{};
+    private async void SetDebitsTrigger(){
+        if(Debits is not null)
+            await SetDebits.InvokeAsync(Debits);
+    }
+    private Debit GetDebitFromValues(Debit debit){
+        var personnel = Personnels.SingleOrDefault(p=> p.PersonnelId == debit.PersonnelId);
+        if(personnel is not null) debit.PId = personnel.Id;
+        var fixture = Fixtures.SingleOrDefault(p=> p.FixtureId == debit.FixtureId);
+        if(fixture is not null) debit.FId = fixture.Id;
+        return debit;
+    }
+
+    public async Task OnRowInsertingAsync(CancellableRowChange<Debit, Dictionary<string, object>> e){
+        var debit = ObjectService.ToObject<Debit>(e.Values);
+        debit = GetDebitFromValues(debit);
+        if(debit.PersonnelId is not null && debit.FixtureId is not null){
+            var p = await DebitService.createDebit(debit);
+            if (p is null) e.Cancel = true;
+        } else e.Cancel = true;
+    }
+    public async Task OnRowUpdatingAsync(CancellableRowChange<Debit, Dictionary<string, object>> e){
+        var debit = ObjectService.ToObject<Debit>(e.Values);
+        debit = GetDebitFromValues(debit);
+        if(debit.PersonnelId is not null && debit.FixtureId is not null){
+            var statusCode = await DebitService.updateDebit(Debit.Id, debit);
+            if(statusCode.ToString() != "OK") e.Cancel = true;
+        } else e.Cancel = true;
+    }
+    public async Task OnRowRemovingAsync(CancellableRowChange<Debit> e){
+        var statusCode = await DebitService.deleteDebit(e.Item.Id);
+        if(statusCode.ToString() != "OK") e.Cancel = true;
+    }
+
+    public void OnRowInserted(SavedRowItem<Debit, Dictionary<string, object>> e){
+        SetDebitsTrigger();
+        SetUnusedFixtures();
+    }
+    public void OnRowUpdated(SavedRowItem<Debit, Dictionary<string, object>> e){
+        SetDebitsTrigger();
+        SetUnusedFixtures();
+    }
+    public void OnRowRemoved(Debit e){
+        SetDebitsTrigger();
+        SetUnusedFixtures();
+    }
+
+    private void SetUnusedFixtures(){
+        var unusedFixtures = Fixtures.Where(p=> !Debits.Any(d=>d.FixtureId==p.FixtureId));
+            if(unusedFixtures is not null) UnusedFixtures = unusedFixtures.ToList<Fixture>();
+
+    }
+
+    protected override Task OnParametersSetAsync()
+    {   
+        // Set Unused Fixtures for Fixture Serarch bar
+        if(__Debits != Debits || __Personnels != Personnels){
+            __Personnels = Personnels;
+            __Debits = Debits;
+            SetUnusedFixtures();
+        }
+        return base.OnParametersSetAsync();
+    }
+}
+

@@ -1,0 +1,49 @@
+﻿<div class="logo-part">
+    <div>
+        <a href="">
+            <img src="imgs/logo.jpg" alt="">
+        </a>
+    </div>
+    <div>
+        <span>
+            Mehmet Uysal
+        </span>
+        <span>
+            Blazor App
+        </span>
+    </div>
+</div>
+
+<div class="menu-part">
+    <div>
+        <a href="" Match="NavLinkMatch.All">
+            <span class="material-symbols-outlined">home</span> <span>Home</span> 
+        </a>
+    </div>
+    <div>
+        <a href="Personnel" Match="NavLinkMatch.All">
+            <span class="material-symbols-outlined">person</span> <span>Personnel Manager</span>
+        </a>
+    </div>
+    <div>
+        <a href="/Fixture" Match="NavLinkMatch.All">
+            <span class="material-symbols-outlined">inventory</span> <span>Fixture Manager</span>
+        </a>
+    </div>
+    <div>
+        <a href="/Debit" Match="NavLinkMatch.All">
+            <span class="material-symbols-outlined">compare_arrows</span> <span>Debit Manager</span>
+        </a>
+    </div>
+</div>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}

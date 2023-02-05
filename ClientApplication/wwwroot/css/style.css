@@ -1,0 +1,16 @@
+body,html{
+    padding: 0;
+    margin: 0;
+}
+a{
+    color: currentColor;
+    text-decoration: none;
+}
+*{ 
+    transition: .1s;
+}
+a.btn-primary.disabled,.btn-danger:disabled,.btn-primary:disabled
+{
+    background-color: gray !important;
+}
+
