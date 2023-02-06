@@ -10,13 +10,11 @@ public class PersonnelService{
         if(personnels is null) return new Personnels();
         return personnels;
     }
-    public static async Task<string> createPersonnel(Personnel personnel)
-    {
-        var u = await HttpClientService.HttpClientService.PostAsync<Personnel>("Personnel", personnel);
-        return u.ToString().Split('/').Last();
+    public static async Task<Personnel?> createPersonnel(Personnel personnel){
+        return await HttpClientService.HttpClientService.PostAsync<Personnel>("Personnel", personnel);
     }
     public static async Task<HttpStatusCode> updatePersonnel(int id, Personnel personnel){
-        return await HttpClientService.HttpClientService.PutAsync<Personnel>($"Debit/{id}", personnel);
+        return await HttpClientService.HttpClientService.PutAsync<Personnel>($"Personnel/{id}", personnel);
     }
     public static async Task<HttpStatusCode> deletePersonnel(int id){
         return await HttpClientService.HttpClientService.DeleteAsync($"Personnel/{id}");

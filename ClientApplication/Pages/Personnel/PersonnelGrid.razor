@@ -28,7 +28,7 @@
         <DataGridColumn Field="@nameof(Personnel.Surname)" Caption="Personnel Surname" Editable/>
     </DataGridColumns>
     <ButtonRowTemplate>
-        <Button Style="margin:5px 1px;" Color="Color.Success" Clicked="context.NewCommand.Clicked">New</Button>
+        <Button Style="margin:5px 1px;" Color="Color.Success" Disabled="newBtnState" Clicked="NewBtnClicked(context.NewCommand)">New</Button>
         <Button Style="margin:5px 1px;" Color="Color.Primary" Disabled="(Personnel?.Name is null)" Clicked="context.EditCommand.Clicked">Edit</Button>
         <Button Style="margin:5px 1px;" Color="Color.Danger" Disabled="(Personnel?.Name is null)" Clicked="context.DeleteCommand.Clicked">Delete</Button>
     </ButtonRowTemplate>
@@ -41,16 +41,30 @@
     [Parameter, EditorRequired]
     public EventCallback<Personnels> SetPersonnels {get; set;}
 
+    private bool newBtnState = true;
     private Personnel Personnel = new Personnel();
     private async void SetPersonnelsTrigger(){
         if(Personnels is not null)
             await SetPersonnels.InvokeAsync(Personnels);
     }
+    
+    public EventCallback NewBtnClicked(NewCommandContext<Personnel> e){
+        newBtnState = false;
+        return e.Clicked;
+    }
 
     public async Task OnRowInsertingAsync(CancellableRowChange<Personnel, Dictionary<string, object>> e){
         var personnel = ObjectService.ToObject<Personnel>(e.Values);
-        var p = await PersonnelService.createPersonnel(personnel);
-        if (p is null) e.Cancel = true;
+        try{
+            var p = await PersonnelService.createPersonnel(personnel);
+            if (p?.PersonnelId is null) e.Cancel = true;
+            else {
+                e.Item.Id = p.Id;
+                e.Item.PersonnelId = p.PersonnelId;
+                }
+        } catch {
+            e.Cancel = true;
+        }
     }
     public async Task OnRowUpdatingAsync(CancellableRowChange<Personnel, Dictionary<string, object>> e){
         var personnel = ObjectService.ToObject<Personnel>(e.Values);
@@ -59,8 +73,6 @@
     }
     public async Task OnRowRemovingAsync(CancellableRowChange<Personnel> e){
         var statusCodeDebit = await DebitService.deleteDebitByPId(e.Item.Id);
-        Console.WriteLine(JsonSerializer.Serialize(e.Item));
-        Console.WriteLine(statusCodeDebit.ToString());
         if(statusCodeDebit.ToString() != "OK") e.Cancel = true;
         else {
             var statusCode = await PersonnelService.deletePersonnel(e.Item.Id);
@@ -69,6 +81,9 @@
     }
 
     public void OnRowInserted(SavedRowItem<Personnel, Dictionary<string, object>> e){
+        newBtnState = true;
+        var p = Personnels.FirstOrDefault(p=>p.PersonnelId == e.Item.PersonnelId);
+        if (p is not null) p.Id = e.Item.Id;
         SetPersonnelsTrigger();
     }
     public void OnRowUpdated(SavedRowItem<Personnel, Dictionary<string, object>> e){

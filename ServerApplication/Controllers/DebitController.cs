@@ -43,9 +43,7 @@ public class DebitController : ControllerBase
     }
     [HttpPut("{id}")]
     public IActionResult UpdateDebit(int id, Debit newDebit){
-        Console.WriteLine(  "-----------");
         var isUpdated = _service.UpdateDebit(id, newDebit);
-        Console.WriteLine(  "-----------");
         if(!isUpdated) return NotFound("Id Not Found");
         return Ok("Succesfully Updated");
     }

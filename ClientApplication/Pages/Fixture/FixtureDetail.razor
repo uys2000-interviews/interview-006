@@ -112,11 +112,9 @@
     private Task OnModalClosing (ModalClosingEventArgs e){
         IntIndex = -1;
         NavManager.NavigateTo("/Fixture");
-        Console.WriteLine("------CloseModal------");
         return Task.CompletedTask;
     }
     private async Task LoadModal(ModalOpeningEventArgs e){
-        Console.WriteLine("------LoadModal------");
         // Load Fixture Details
         if(Fixtures.Count > 0 ){
             var fixture = Fixtures.Find(f=>f.Id == IntIndex);
@@ -157,7 +155,7 @@
         if(Fixture.FixtureId != FixtureId || Fixture.Notes != Notes){
             Fixture.FixtureId = FixtureId;
             Fixture.Notes = Notes;
-            var statusCode = await FixtureService.updateFixture(Fixture, Fixtures);
+            var statusCode = await FixtureService.updateFixture(Fixture);
             if(statusCode.ToString()=="OK")
                 await SetPersonnelsTrigger();
         }
@@ -168,25 +166,21 @@
             FixtureId = Fixture.FixtureId, // This will be changed if upper part runs
             IsTaken = IsTaken
         };
-        if(Personnel is not null){
-            if(TPersonnel is null){
-                Console.WriteLine("Delete");
+        if(Personnel.PersonnelId is not null){
+            if(TPersonnel.PersonnelId is null){
                 await DebitService.deleteDebit(Debit.Id);
             } else if (Personnel.Id != TPersonnel.Id || Debit.IsTaken != IsTaken) {
                 debit.PId = TPersonnel.Id;
                 debit.PersonnelId = TPersonnel.PersonnelId;
-                Console.WriteLine("Update");
                 await DebitService.updateDebit(Debit.Id, debit);
             }
         } else {
             if(TPersonnel is not null){
                 debit.PId = TPersonnel.Id;
                 debit.PersonnelId = TPersonnel.PersonnelId;
-                Console.WriteLine("Create");
                 await DebitService.createDebit(debit);
             }
         }
-        TPersonnel = new Personnel();
         if (ModalRef is not null) await ModalRef.Hide();
     }
     protected override Task OnAfterRenderAsync(bool firstRender)

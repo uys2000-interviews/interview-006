@@ -26,12 +26,12 @@ public class HttpClientService
             return default;
         }
     }
-    public static async Task<Uri> PostAsync<T>(string url, T item)
+    public static async Task<T?> PostAsync<T>(string url, T item)
     {
         HttpResponseMessage response = await client.PostAsJsonAsync(url, item);
-        response.EnsureSuccessStatusCode();
-        if (response.Headers.Location is null) throw new Exception("Exception at PostAsync.response.Headers.Location");
-        return response.Headers.Location;
+        T? result = await response.Content.ReadFromJsonAsync<T>();
+        if (result is null) return default;
+        return result;
     }
     public static async Task<HttpStatusCode> PutAsync<T>(string url, T item)
     {

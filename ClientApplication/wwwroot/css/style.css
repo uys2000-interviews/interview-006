@@ -9,7 +9,7 @@ a{
 *{ 
     transition: .1s;
 }
-a.btn-primary.disabled,.btn-danger:disabled,.btn-primary:disabled
+a.btn-primary.disabled, .btn-success.disabled, .btn-danger:disabled,.btn-primary:disabled
 {
     background-color: gray !important;
 }

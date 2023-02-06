@@ -10,10 +10,9 @@ public class DebitService{
         if(debits is null) return new Debits();
         return debits;
     }
-    public static async Task<string?> createDebit(Debit debit)
+    public static async Task<Debit?> createDebit(Debit debit)
     {
-        var u = await HttpClientService.HttpClientService.PostAsync<Debit>("Debit", debit);
-        return u.ToString().Split('/').Last();
+        return await HttpClientService.HttpClientService.PostAsync<Debit>("Debit", debit);
     }
     public static async Task<Debit?> getDebit(int fId){
         var debit = await HttpClientService.HttpClientService.GetAsync<Debit>($"Debit/{fId}");

@@ -45,7 +45,7 @@
         <div>Notes : @context.Notes</div>
     </DetailRowTemplate>
     <ButtonRowTemplate>
-        <Button Style="margin:5px 0;" Color="Color.Success" Clicked="context.NewCommand.Clicked">New</Button>
+        <Button Style="margin:5px 0;" Color="Color.Success" Disabled="newBtnState" Clicked="NewBtnClicked(context.NewCommand)">New</Button>
         <Button Style="margin:5px 2px;" Color="Color.Primary" Disabled="(Fixture?.FixtureId is null)" Clicked="context.EditCommand.Clicked">Edit</Button>
         @{
             var ls = $"Fixture/{Fixture?.Id.ToString()}";
@@ -61,23 +61,38 @@
 
     [Parameter, EditorRequired]
     public EventCallback<Fixtures> SetFixtures {get; set;}
-
+    
+    private bool newBtnState = true;
     private Fixture Fixture = new Fixture();
 
     private async void SetFixturesTrigger(){
         if(this.Fixtures is not null)
             await SetFixtures.InvokeAsync(Fixtures);
     }
+    public EventCallback NewBtnClicked(NewCommandContext<Fixture> e){
+        newBtnState = false;
+        return e.Clicked;
+    }
     public async Task OnRowInsertingAsync(CancellableRowChange<Fixture, Dictionary<string, object>> e){
+        newBtnState = !newBtnState;
         var fixture = ObjectService.ToObject<Fixture>(e.Values);
-        if(fixture.Type is null) fixture.Type = "Computer";
-        var p = await FixtureService.createFixture(fixture, Fixtures);
-        if (p is null) e.Cancel = true;
+        try{
+            if(fixture.Type is null) fixture.Type = "Computer";
+            var p = await FixtureService.createFixture(fixture);
+            if (p?.FixtureId is null) e.Cancel = true;
+            else{
+                e.Item.Id = p.Id;
+                e.Item.FixtureId = p.FixtureId;
+            }
+        } catch {
+            e.Cancel = true;
+        }
     }
     public async Task OnRowUpdatingAsync(CancellableRowChange<Fixture, Dictionary<string, object>> e){
         var fixture = ObjectService.ToObject<Fixture>(e.Values);
-        fixture.Notes = e.Item.Notes;
-        var statusCode = await FixtureService.updateFixture(fixture, Fixtures);
+        var f = Fixtures.SingleOrDefault(f=>f.FixtureId == fixture.FixtureId);
+        if(f is not null) fixture.Id = f.Id;
+        var statusCode = await FixtureService.updateFixture(fixture);
         if(statusCode.ToString() != "OK") e.Cancel = true;
     }
     public async Task OnRowRemovingAsync(CancellableRowChange<Fixture> e){
@@ -89,7 +104,10 @@
         }
     }
     public void OnRowInserted(SavedRowItem<Fixture, Dictionary<string, object>> e){
+        newBtnState = true;
         if(e.Item.Type is null) e.Item.Type = "Computer"; // when type is not changed it comes null so we are setting it to default
+        var f = Fixtures.FirstOrDefault(f=>f.FixtureId == e.Item.FixtureId);
+        if (f is not null) f.Id = e.Item.Id;
         SetFixturesTrigger();
     }
     public void OnRowUpdated(SavedRowItem<Fixture, Dictionary<string, object>> e){

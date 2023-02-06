@@ -89,7 +89,7 @@
         </DataGridColumn>
     </DataGridColumns>
     <ButtonRowTemplate>
-        <Button Style="margin:5px 1px;" Color="Color.Success" Clicked="context.NewCommand.Clicked">New</Button>
+        <Button Style="margin:5px 1px;" Color="Color.Success" Disabled="newBtnState" Clicked="NewBtnClicked(context.NewCommand)">New</Button>
         <Button Style="margin:5px 1px;" Color="Color.Primary" Disabled="(Debit?.FixtureId is null)" Clicked="context.EditCommand.Clicked">Edit</Button>
         <Button Style="margin:5px 1px;" Color="Color.Danger" Disabled="(Debit?.FixtureId is null)" Clicked="context.DeleteCommand.Clicked">Delete</Button>
     </ButtonRowTemplate>
@@ -106,7 +106,8 @@
 
     [Parameter, EditorRequired]
     public EventCallback<Debits> SetDebits {get; set;}
-
+    
+    private bool newBtnState = true;
     private Debit Debit = new Debit();
     public Debits __Debits = new Debits{};
     public Personnels __Personnels = new Personnels{};
@@ -120,15 +121,26 @@
         if(personnel is not null) debit.PId = personnel.Id;
         var fixture = Fixtures.SingleOrDefault(p=> p.FixtureId == debit.FixtureId);
         if(fixture is not null) debit.FId = fixture.Id;
-        return debit;
+        return debit;    
+    
     }
 
+    public EventCallback NewBtnClicked(NewCommandContext<Debit> e){
+        newBtnState = false;
+        return e.Clicked;
+    }
+    
     public async Task OnRowInsertingAsync(CancellableRowChange<Debit, Dictionary<string, object>> e){
         var debit = ObjectService.ToObject<Debit>(e.Values);
         debit = GetDebitFromValues(debit);
         if(debit.PersonnelId is not null && debit.FixtureId is not null){
-            var p = await DebitService.createDebit(debit);
-            if (p is null) e.Cancel = true;
+            try{
+                var p = await DebitService.createDebit(debit);
+                if (p?.FixtureId is null) e.Cancel = true;
+                else e.Item.Id = p.Id;
+            } catch {
+                e.Cancel = true;
+            }
         } else e.Cancel = true;
     }
     public async Task OnRowUpdatingAsync(CancellableRowChange<Debit, Dictionary<string, object>> e){
@@ -145,6 +157,7 @@
     }
 
     public void OnRowInserted(SavedRowItem<Debit, Dictionary<string, object>> e){
+        newBtnState = true;
         SetDebitsTrigger();
         SetUnusedFixtures();
     }

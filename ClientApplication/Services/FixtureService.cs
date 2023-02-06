@@ -10,16 +10,11 @@ public class FixtureService{
         if (fixtures is null) return new Fixtures();
         return fixtures;
     }
-    public static async Task<string?> createFixture(Fixture fixture, Fixtures fixtures)
+    public static async Task<Fixture?> createFixture(Fixture fixture)
     {
-        var p = fixtures.Find(p=>p.FixtureId==fixture.FixtureId);
-        if (p is not null) return null;
-        var u = await HttpClientService.HttpClientService.PostAsync<Fixture>("Fixture", fixture);
-        return u.ToString().Split('/').Last();
+        return await HttpClientService.HttpClientService.PostAsync<Fixture>("Fixture", fixture);
     }
-    public static async Task<HttpStatusCode> updateFixture(Fixture fixture, Fixtures fixtures){
-        var p = fixtures.Find(p=>p.FixtureId==fixture.FixtureId);
-        if (p is null) return default;
+    public static async Task<HttpStatusCode> updateFixture(Fixture fixture){
         return await HttpClientService.HttpClientService.PutAsync<Fixture>($"Fixture/{fixture.Id}", fixture);
         
     }

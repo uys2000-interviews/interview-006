@@ -91,12 +91,10 @@ public class DebitService
     }
     public bool DeleteDebitByPId(int pId)
     {
-        Console.WriteLine(pId);
         var debitsToDelete = _context.Debits
             .AsNoTracking()
             .Where(d => d.PId == pId).ToArray();
-        Console.WriteLine(debitsToDelete.Count());
-        if(debitsToDelete.Count() == 0) return false;
+        if(debitsToDelete.Count() == 0) return true;
         _context.Debits.RemoveRange(debitsToDelete);
         _context.SaveChanges();
         return true;
@@ -106,7 +104,7 @@ public class DebitService
         var debitsToDelete = _context.Debits
             .AsNoTracking()
             .Where(p => p.PersonnelId == personnelId).ToArray();
-        if(debitsToDelete.Count() == 0) return false;
+        if(debitsToDelete.Count() == 0) return true;
         _context.Debits.RemoveRange(debitsToDelete);
         _context.SaveChanges();
         return true;
@@ -114,7 +112,7 @@ public class DebitService
     public bool DeleteDebitByFId(int fId)
     {   
         var debitToDelete = _context.Debits.SingleOrDefault(d=> d.FId == fId);
-        if (debitToDelete is null) return false;
+        if (debitToDelete is null) return true;
         _context.Debits.Remove(debitToDelete);
         _context.SaveChanges();
         return true;
@@ -122,7 +120,7 @@ public class DebitService
     public bool DeleteDebitByFId(string fixtureId)
     {
         var debitToDelete = _context.Debits.SingleOrDefault(d=> d.FixtureId == fixtureId);
-        if (debitToDelete is null) return false;
+        if (debitToDelete is null) return true;
         _context.Debits.Remove(debitToDelete);
         _context.SaveChanges();
         return true;
