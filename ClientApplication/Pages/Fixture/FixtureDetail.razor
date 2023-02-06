@@ -127,7 +127,7 @@
         }
         
         // Get Debit
-        var debit = await DebitService.getDebit(Fixture.Id);
+        var debit = await DebitService.getDebitByFId(Fixture.Id);
         if(debit is not null) {
             Debit = debit;
             IsTaken = debit.IsTaken;

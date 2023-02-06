@@ -90,9 +90,15 @@
     }
     public async Task OnRowUpdatingAsync(CancellableRowChange<Fixture, Dictionary<string, object>> e){
         var fixture = ObjectService.ToObject<Fixture>(e.Values);
-        var f = Fixtures.SingleOrDefault(f=>f.FixtureId == fixture.FixtureId);
+        var f = Fixtures.SingleOrDefault(f=>f.FixtureId == e.Item.FixtureId);
         if(f is not null) fixture.Id = f.Id;
         var statusCode = await FixtureService.updateFixture(fixture);
+        var debit = await DebitService.getDebitByFId(fixture.Id);
+        if(debit is not null){
+            debit.FixtureId = fixture.FixtureId;
+            await DebitService.updateDebit(debit.Id, debit);
+        } 
+            
         if(statusCode.ToString() != "OK") e.Cancel = true;
     }
     public async Task OnRowRemovingAsync(CancellableRowChange<Fixture> e){

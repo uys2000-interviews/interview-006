@@ -14,8 +14,13 @@ public class DebitService{
     {
         return await HttpClientService.HttpClientService.PostAsync<Debit>("Debit", debit);
     }
-    public static async Task<Debit?> getDebit(int fId){
-        var debit = await HttpClientService.HttpClientService.GetAsync<Debit>($"Debit/{fId}");
+    public static async Task<Debit?> getDebit(int id){
+        var debit = await HttpClientService.HttpClientService.GetAsync<Debit>($"Debit/{id}");
+        if (debit is null) return default;
+        return debit;
+    }
+    public static async Task<Debit?> getDebitByFId(int fId){
+        var debit = await HttpClientService.HttpClientService.GetAsync<Debit>($"Debit/fId/{fId}");
         if (debit is null) return default;
         return debit;
     }
