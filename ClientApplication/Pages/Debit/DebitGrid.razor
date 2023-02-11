@@ -22,7 +22,7 @@
     SubmitFormOnEnter="false"
     >
     <DataGridColumns>
-        <DataGridColumn Field="@nameof(Debit.FixtureId)" Caption="Fixture Id" Editable>
+        <DataGridColumn Field="@nameof(Debit.FixtureId)" Caption="Fixture Serial / IMEI Number" Editable>
             <EditTemplate>
                 @if(context is not null && context.Item is not null){
                     var cellValue = context.Item.FixtureId;
@@ -69,7 +69,7 @@
                 }
             </DisplayTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(Debit.IsTaken)" Caption="Debit Location" Editable>
+        <DataGridColumn Field="@nameof(Debit.IsTaken)" Caption="Fixture Location" Editable>
             <DisplayTemplate>
                 @if(context is not null){
                     @(context.IsTaken ? "On Personnel" : "On Companny")
