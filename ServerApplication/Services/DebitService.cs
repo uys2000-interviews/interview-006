@@ -71,6 +71,18 @@ public class DebitService
             .AsNoTracking()
             .Where(p => p.PersonnelId == personnelId).ToArray();
     }
+    public bool UpdateDebitsByPId(int id, Personnel personnel)
+    {
+        try{
+            var debits = _context.Debits
+                .Where(p => p.PId == id).ToList();
+            debits.ForEach(p=>{
+                p.PersonnelId = personnel.PersonnelId;
+            });
+            _context.SaveChanges();
+            return true;
+        } catch { return false; }
+    }
     public Debit GetDebitByFId(int fId)
     {
         return _context.Debits
@@ -82,6 +94,18 @@ public class DebitService
         return _context.Debits
             .AsNoTracking()
             .First(p => p.FixtureId == fixtureId);
+    }
+    public bool SetDebitByFId(int id, string fixtureId)
+    {
+        try{
+            var debits = _context.Debits
+                .Where(p => p.FId == id).ToList();
+            debits.ForEach(p=>{
+                p.FixtureId = fixtureId;
+            });
+            _context.SaveChanges();
+            return true;
+        } catch { return false; }
     }
     public Debit[] GetDebitsByTaken(bool isTaken)
     {

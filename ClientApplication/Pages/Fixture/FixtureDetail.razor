@@ -15,10 +15,31 @@
         </ModalHeader>
         <ModalBody>
             <Field>
-                <FieldLabel>Fixture ID</FieldLabel>
-                <TextEdit Placeholder="Enter Fixture ID..." @bind-Text="@FixtureId" />
+                <FieldLabel>@(Type == "Phone" ? "IMEI Number" : "Serial Number")</FieldLabel>
+                <TextEdit Placeholder="Fixture ID..." @bind-Text="@FixtureId" />
             </Field>
             <Fields Horizontal>
+                <Field>
+                    <FieldLabel>Type</FieldLabel>
+                    <Select TValue="string"
+                        SelectedValue="Type"
+                        SelectedValueChanged="@( v => Type = v)">
+                        <SelectItem TValue="string" Value='@("Computer")'>Computer</SelectItem>
+                        <SelectItem TValue="string" Value='@("Monitor")'>Monitor</SelectItem>
+                        <SelectItem TValue="string" Value='@("Phone")'>Phone</SelectItem>
+                    </Select>
+                </Field>
+                <Field>
+                    <FieldLabel>Brand</FieldLabel>
+                    <TextEdit Placeholder="Fixture Brand..." @bind-Text="@Brand" />
+                </Field>
+                <Field>
+                    <FieldLabel>Model</FieldLabel>
+                    <TextEdit Placeholder="Fixture Model..." @bind-Text="@Model" />
+                </Field>        
+            </Fields>
+            <Fields Horizontal>
+                @if(Personnel.PersonnelId is not null){
                 <Field>
                     <FieldLabel>Debited Personnel Name</FieldLabel>
                     @{
@@ -30,6 +51,7 @@
                     <FieldLabel>Debited Personnel ID</FieldLabel>
                     <TextEdit Placeholder="" @bind-Text="@Personnel.PersonnelId" Disabled="true" />
                 </Field>
+                }
                 <Field>
                     <FieldLabel>Fixture Location</FieldLabel>
                     @{
@@ -81,8 +103,12 @@
     private Autocomplete<Personnel,Personnel>? AutoComplete;
     private int RepeatSheld = 0;
 
-    private string FixtureId = "";
+    private string? Type = "";
+    private string? FixtureId = "";
+    private string? Brand = "";
+    private string? Model = "";
     private string? Notes = "";
+
     private bool IsTaken = false;
     public int IntIndex = -1;
     private string? TText = "";
@@ -103,7 +129,13 @@
 
     [Parameter, EditorRequired]
     public EventCallback<Personnels> SetPersonnels {get; set;}
-    
+
+    [Parameter]
+    public string ReturnId {get; set;} = "";
+    [Parameter]
+    public string ReturnPage {get; set;} = "";
+
+
     private async Task SetPersonnelsTrigger(){
         if(this.Personnels is not null)
             await SetPersonnels.InvokeAsync(Personnels);
@@ -111,7 +143,8 @@
 
     private Task OnModalClosing (ModalClosingEventArgs e){
         IntIndex = -1;
-        NavManager.NavigateTo("/Fixture");
+        if(ReturnPage == "p" && ReturnId != "") NavManager.NavigateTo($"/Personnel/{ReturnId}");
+        else NavManager.NavigateTo("/Fixture");
         return Task.CompletedTask;
     }
     private async Task LoadModal(ModalOpeningEventArgs e){
@@ -122,6 +155,9 @@
                 Fixture = fixture;
                 if (fixture.FixtureId is not null)
                     FixtureId = fixture.FixtureId;
+                Type = fixture.Type;
+                Model = fixture.Model;
+                Brand = fixture.Brand;
                 Notes = fixture.Notes;
             }
         }
@@ -166,8 +202,9 @@
             FixtureId = Fixture.FixtureId, // This will be changed if upper part runs
             IsTaken = IsTaken
         };
+        Console.WriteLine();
         if(Personnel.PersonnelId is not null){
-            if(TPersonnel.PersonnelId is null){
+            if(TPersonnel is null){
                 await DebitService.deleteDebit(Debit.Id);
             } else if (Personnel.Id != TPersonnel.Id || Debit.IsTaken != IsTaken) {
                 debit.PId = TPersonnel.Id;

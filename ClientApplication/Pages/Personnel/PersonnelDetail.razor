@@ -1,0 +1,174 @@
+@using ClientApplication.Services.PersonnelService
+@using ClientApplication.Services.DebitService
+@using ClientApplication.Models
+@using Blazorise
+
+@inject NavigationManager NavManager
+
+
+<Modal @ref="ModalRef" Opening="@LoadModal" Closing="@OnModalClosing" >
+    <ModalContent Centered>
+        <ModalHeader>
+            <ModalTitle>Personnel Details</ModalTitle>
+            <CloseButton />
+        </ModalHeader>
+        <ModalBody>
+            <Field>
+                <FieldLabel>Personnel ID</FieldLabel>
+                <TextEdit Placeholder="" @bind-Text="@PersonnelId" />
+            </Field>
+            <Fields Horizontal>
+                <Field>
+                    <FieldLabel>Personnel Name</FieldLabel>
+                    <TextEdit Placeholder="" @bind-Text="@Name" />
+                </Field>
+                <Field>
+                    <FieldLabel>Personnel Surname</FieldLabel>
+                    <TextEdit Placeholder="" @bind-Text="@Surname" />
+                </Field>
+            </Fields>
+        </ModalBody>
+        <ModalBody MaxHeight="50">
+            <Table FixedHeader>
+                <TableHeader>
+                    <TableRow>
+                        <TableHeaderCell>Fixture Serial / IMEI Number</TableHeaderCell>
+                        <TableHeaderCell>Fixture Location</TableHeaderCell>
+                        <TableHeaderCell></TableHeaderCell>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    @foreach(var debit in Debits){
+                        <TableRow>
+                            <TableRowCell>@debit.FixtureId</TableRowCell>
+                            <TableRowCell>@(debit.IsTaken ? "On Personnel" : "On Company")</TableRowCell>
+                            @{
+                                var fId = debit.FId;
+                                var toFixture = $"/Fixture/{fId}?return=p&id={debit.PId}";
+                                <TableRowCell Style="text-align:right"><Button Type="ButtonType.Link" To="@toFixture">Go Details</Button></TableRowCell>
+                            }
+                        </TableRow>
+                    } 
+                </TableBody>
+            </Table>
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="@CloseModal">Close</Button>
+            <Button Color="Color.Secondary" Clicked="@SaveModal">Save</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code{
+    private Modal? ModalRef;
+    private int RepeatSheld = 0;
+
+    private string PersonnelId = "";
+    private string Name = "";
+    private string Surname = "";
+    private Personnel Personnel = new Personnel();
+
+    private Debits Debits = new Debits{}; 
+    private Fixtures Fixtures = new Fixtures{}; 
+    
+    [Parameter]
+    public string Index {get; set;} = "";
+    public int IntIndex = -1;
+    
+    [Parameter, EditorRequired]
+    public Personnels Personnels {get; set;} = new Personnels{};
+    private Personnels __Personnels = new Personnels{};
+
+    [Parameter, EditorRequired]
+    public EventCallback<Personnels> SetPersonnels {get; set;}
+    
+    private async Task SetPersonnelsTrigger(){
+        if(this.Personnels is not null)
+            await SetPersonnels.InvokeAsync(Personnels);
+    }
+
+    private Task OnModalClosing (ModalClosingEventArgs e){
+        IntIndex = -1;
+        NavManager.NavigateTo("/Personnel");
+        return Task.CompletedTask;
+    }
+    private async Task LoadModal(ModalOpeningEventArgs e){
+        // Get Personnel
+        if(Personnels.Count > 0){
+            var personnel = Personnels.Find(p=>p.Id == IntIndex);
+            if(personnel is not null) {
+                Personnel = personnel;
+                #nullable disable
+                Name = personnel.Name;
+                Surname = personnel.Surname;
+                PersonnelId = personnel.PersonnelId;
+                #nullable enable
+            }
+        }
+        // Get Debits
+        Debits = await DebitService.getDebitByPId(IntIndex);
+        // Get Fixtures
+
+        StateHasChanged();
+    }
+    private void CloseModal(){
+        if (ModalRef is not null) ModalRef.Hide();
+    }
+    private async void SaveModal(){
+        if(Name != Personnel.Name || Surname!= Personnel.Surname || PersonnelId != Personnel.PersonnelId){
+            //update on local
+            var oldPersonnel = Personnels.Find(p=>p.Id == Personnel.Id);
+            if(oldPersonnel is null){ CloseModal(); return; } 
+            oldPersonnel.Name = Name;
+            oldPersonnel.Surname = Surname;
+            oldPersonnel.PersonnelId = PersonnelId;
+            await SetPersonnelsTrigger();
+
+            //update on DB
+            var newPersonnel = new Personnel(){
+                Name = Name,
+                Surname = Surname,
+                PersonnelId = PersonnelId
+            };
+            await PersonnelService.updatePersonnel(Personnel.Id, newPersonnel);
+            await DebitService.updateDebitsByPId(Personnel.Id, newPersonnel.PersonnelId);
+            
+            CloseModal();
+        }
+    }
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Personnels.Count()!=0){
+            if(Int32.TryParse(Index, out IntIndex)) {
+                if (ModalRef is not null) ModalRef.Show();
+            }
+            else if (ModalRef is not null) ModalRef.Hide();
+        }
+        return base.OnAfterRenderAsync(firstRender);
+    }   
+    protected override Task OnParametersSetAsync()
+    {   
+        // Refresh Modal if Modal loads before Personnels
+        if(__Personnels != Personnels){
+            if(RepeatSheld == 0) RepeatSheld++;
+            else {
+                if(Int32.TryParse(Index, out IntIndex))
+                    if (ModalRef is not null){
+                        var url = NavManager.Uri;
+                        ModalRef.Hide();
+                        NavManager.NavigateTo(url);
+                        ModalRef.Show();
+                    } 
+            }
+            __Personnels = Personnels;
+        }
+        return base.OnParametersSetAsync();
+    }
+}
+
+
+
+    
+
+
+

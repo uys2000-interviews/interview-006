@@ -59,10 +59,10 @@
                 }
             </EditTemplate>
         </DataGridColumn>
-        <DataGridColumn Field="@nameof(Debit.PersonnelId)" Caption="Personnel Name">
+        <DataGridColumn Field="@nameof(Debit.PId)" Caption="Personnel Name">
             <DisplayTemplate>
                 @if(context is not null){
-                    var personnel = Personnels.FirstOrDefault(e=>e.PersonnelId == context.PersonnelId);
+                    var personnel = Personnels.FirstOrDefault(e=>e.Id == context.PId);
                     @if(personnel is not null){
                         @(personnel.Name + " " + personnel.Surname);
                     }
@@ -88,8 +88,8 @@
             </EditTemplate>
         </DataGridColumn>
     </DataGridColumns>
-    <ButtonRowTemplate>
-        <Button Style="margin:5px 1px;" Color="Color.Success" Disabled="newBtnState" Clicked="NewBtnClicked(context.NewCommand)">New</Button>
+    <ButtonRowTemplate >
+        <Button Style="margin:5px 1px;" Color="Color.Success" Clicked="context.NewCommand.Clicked" Arg>New</Button>
         <Button Style="margin:5px 1px;" Color="Color.Primary" Disabled="(Debit?.FixtureId is null)" Clicked="context.EditCommand.Clicked">Edit</Button>
         <Button Style="margin:5px 1px;" Color="Color.Danger" Disabled="(Debit?.FixtureId is null)" Clicked="context.DeleteCommand.Clicked">Delete</Button>
     </ButtonRowTemplate>
@@ -107,7 +107,6 @@
     [Parameter, EditorRequired]
     public EventCallback<Debits> SetDebits {get; set;}
     
-    private bool newBtnState = true;
     private Debit Debit = new Debit();
     public Debits __Debits = new Debits{};
     public Personnels __Personnels = new Personnels{};
@@ -124,12 +123,6 @@
         return debit;    
     
     }
-
-    public EventCallback NewBtnClicked(NewCommandContext<Debit> e){
-        newBtnState = false;
-        return e.Clicked;
-    }
-    
     public async Task OnRowInsertingAsync(CancellableRowChange<Debit, Dictionary<string, object>> e){
         var debit = ObjectService.ToObject<Debit>(e.Values);
         debit = GetDebitFromValues(debit);
@@ -157,7 +150,6 @@
     }
 
     public void OnRowInserted(SavedRowItem<Debit, Dictionary<string, object>> e){
-        newBtnState = true;
         SetDebitsTrigger();
         SetUnusedFixtures();
     }

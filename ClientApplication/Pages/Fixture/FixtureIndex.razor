@@ -7,13 +7,20 @@
     <FixtureGrid Fixtures="@Fixtures" SetFixtures="@SetFixtures"/>
 </div>
 @if(Index != "" && Index != null){
-    <FixtureDetail Index="@Index" Personnels="@Personnels" Fixtures="@Fixtures" SetPersonnels="@SetPersonnels" />
+    <FixtureDetail Index="@Index" Personnels="@Personnels" Fixtures="@Fixtures" SetPersonnels="@SetPersonnels" ReturnPage="@ReturnPage" ReturnId="@ReturnId" />
 }
 
 @code{
 
     [Parameter]
     public string Index { get; set; } = "";
+    
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "return")]
+    public string ReturnPage { get; set; } = "";
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "id")]
+    public string ReturnId { get; set; } = "";
     
     public Fixtures Fixtures = new Fixtures{};
     public Personnels Personnels = new Personnels{};

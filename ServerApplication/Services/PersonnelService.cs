@@ -32,8 +32,7 @@ public class PersonnelService
     public bool UpdatePersonnel(int id, Personnel personnel)
     {
         var personnelToUpdate = _context.Personnels.Find(id);
-        if (personnelToUpdate is null) return false;
-        personnelToUpdate = personnel;
+        if (personnelToUpdate?.PersonnelId is null) return false;
         personnelToUpdate.PersonnelId = personnel.PersonnelId;
         personnelToUpdate.Name = personnel.Name;
         personnelToUpdate.Surname = personnel.Surname;

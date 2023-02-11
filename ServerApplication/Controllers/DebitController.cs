@@ -52,6 +52,13 @@ public class DebitController : ControllerBase
     {
         return _service.GetDebitsByPId(pId);
     }
+    [HttpPut("pId/{pId}")]
+    public ActionResult UpdateDebitsByPId(int pId, Personnel personnel)
+    {
+        var isUpdated = _service.UpdateDebitsByPId(pId, personnel); 
+        if(!isUpdated) return NotFound("Id Not Found");
+        return Ok("Succesfully Updated"); 
+    }
     [HttpGet("peId/{peId}")]
     public ActionResult<IEnumerable<Debit>> GetDebitsByPeId(string peId)
     {
@@ -75,6 +82,13 @@ public class DebitController : ControllerBase
     public ActionResult<Debit> GetDebitByFId(int fId)
     {
         return _service.GetDebitByFId(fId);
+    }
+    [HttpPut("fId/{fId}")]
+    public ActionResult<IEnumerable<Debit>> SetDebitsByFId(int fId, string fixtureId)
+    {
+        var isUpdated = _service.SetDebitByFId(fId, fixtureId); 
+        if(!isUpdated) return NotFound("Id Not Found");
+        return Ok("Succesfully Updated");
     }
     [HttpGet("feId/{feId}")]
     public ActionResult<Debit> GetDebitByFeId(string feId)

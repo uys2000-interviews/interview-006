@@ -1,4 +1,4 @@
-@page "/Personnel"
+@page "/Personnel/{Index?}"
 @using ClientApplication.Pages.Debit
 @using ClientApplication.Models
 
@@ -6,8 +6,14 @@
     <PersonnelRefresh Personnels="@Personnels" SetPersonnels="@SetPersonnels"/>
     <PersonnelGrid Personnels="@Personnels" SetPersonnels="@SetPersonnels"/>
 </div>
+@if(Index != "" && Index != null){
+    <PersonnelDetail Index="@Index" Personnels="@Personnels" SetPersonnels="@SetPersonnels" />
+}
 
 @code{
+    
+    [Parameter]
+    public string Index { get; set; } = "";
     
     public Personnels Personnels = new Personnels{};
 

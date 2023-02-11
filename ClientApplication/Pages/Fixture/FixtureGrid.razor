@@ -23,7 +23,7 @@
     >
     
     <DataGridColumns>
-        <DataGridColumn Field="@nameof(Fixture.FixtureId)" Caption="Fixture Id" Editable/>
+        <DataGridColumn Field="@nameof(Fixture.FixtureId)" Caption="Serial Number / IMEI Number" Editable/>
         <DataGridColumn Field="@nameof(Fixture.Type)" Caption="Type" Editable >
             <EditTemplate >
                 @{
@@ -45,7 +45,7 @@
         <div>Notes : @context.Notes</div>
     </DetailRowTemplate>
     <ButtonRowTemplate>
-        <Button Style="margin:5px 0;" Color="Color.Success" Disabled="newBtnState" Clicked="NewBtnClicked(context.NewCommand)">New</Button>
+        <Button Style="margin:5px 0;" Color="Color.Success" Clicked="context.NewCommand.Clicked">New</Button>
         <Button Style="margin:5px 2px;" Color="Color.Primary" Disabled="(Fixture?.FixtureId is null)" Clicked="context.EditCommand.Clicked">Edit</Button>
         @{
             var ls = $"Fixture/{Fixture?.Id.ToString()}";
@@ -62,19 +62,13 @@
     [Parameter, EditorRequired]
     public EventCallback<Fixtures> SetFixtures {get; set;}
     
-    private bool newBtnState = true;
     private Fixture Fixture = new Fixture();
 
     private async void SetFixturesTrigger(){
         if(this.Fixtures is not null)
             await SetFixtures.InvokeAsync(Fixtures);
     }
-    public EventCallback NewBtnClicked(NewCommandContext<Fixture> e){
-        newBtnState = false;
-        return e.Clicked;
-    }
     public async Task OnRowInsertingAsync(CancellableRowChange<Fixture, Dictionary<string, object>> e){
-        newBtnState = !newBtnState;
         var fixture = ObjectService.ToObject<Fixture>(e.Values);
         try{
             if(fixture.Type is null) fixture.Type = "Computer";
@@ -110,7 +104,6 @@
         }
     }
     public void OnRowInserted(SavedRowItem<Fixture, Dictionary<string, object>> e){
-        newBtnState = true;
         if(e.Item.Type is null) e.Item.Type = "Computer"; // when type is not changed it comes null so we are setting it to default
         var f = Fixtures.FirstOrDefault(f=>f.FixtureId == e.Item.FixtureId);
         if (f is not null) f.Id = e.Item.Id;

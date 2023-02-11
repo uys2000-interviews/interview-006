@@ -1,6 +1,7 @@
 using ClientApplication.Services.HttpClientService;
 using ClientApplication.Models;
 using System.Net;
+using System.Text.Json;
 
 namespace ClientApplication.Services.DebitService;
 
@@ -10,17 +11,8 @@ public class DebitService{
         if(debits is null) return new Debits();
         return debits;
     }
-    public static async Task<Debit?> createDebit(Debit debit)
-    {
-        return await HttpClientService.HttpClientService.PostAsync<Debit>("Debit", debit);
-    }
     public static async Task<Debit?> getDebit(int id){
         var debit = await HttpClientService.HttpClientService.GetAsync<Debit>($"Debit/{id}");
-        if (debit is null) return default;
-        return debit;
-    }
-    public static async Task<Debit?> getDebitByFId(int fId){
-        var debit = await HttpClientService.HttpClientService.GetAsync<Debit>($"Debit/fId/{fId}");
         if (debit is null) return default;
         return debit;
     }
@@ -29,11 +21,32 @@ public class DebitService{
         if (debit is null) return default;
         return debit;
     }
+    public static async Task<Debit?> createDebit(Debit debit)
+    {
+        return await HttpClientService.HttpClientService.PostAsync<Debit>("Debit", debit);
+    }
     public static async Task<HttpStatusCode> updateDebit(int id, Debit debit){
         return await HttpClientService.HttpClientService.PutAsync<Debit>($"Debit/{id}", debit);
     }
     public static async Task<HttpStatusCode> deleteDebit(int id){
         return await HttpClientService.HttpClientService.DeleteAsync($"Debit/{id}");
+    }
+    public static async Task<Debit?> getDebitByFId(int fId){
+        var debit = await HttpClientService.HttpClientService.GetAsync<Debit>($"Debit/fId/{fId}");
+        if (debit is null) return default;
+        return debit;
+    }
+    public static async Task<Debits> getDebitByPId(int pId){
+        var debit = await HttpClientService.HttpClientService.GetAsync<Debits>($"Debit/pId/{pId}");
+        if (debit is null) return new Debits{};
+        return debit;
+    }
+    public static async Task<HttpStatusCode> updateDebitsByPId(int pId, string personnelId){
+        var personnel = new Personnel();
+        personnel.PersonnelId = personnelId;
+        personnel.Name = "NA";
+        personnel.Surname = "NA";
+        return await HttpClientService.HttpClientService.PutAsync<Personnel>($"Debit/pId/{pId}", personnel);
     }
     public static async Task<HttpStatusCode> deleteDebitByFId(int fId){
         return await HttpClientService.HttpClientService.DeleteAsync($"Debit/fId/{fId}");

@@ -42,7 +42,7 @@ public class PersonnelController : ControllerBase
         return Ok("Succesfully Deleted");
     }
     [HttpPut("{id}")]
-    public IActionResult UpdateDebit(int id, Personnel newPersonnel){
+    public IActionResult UpdatePersonnel(int id, Personnel newPersonnel){
         var isUpdated = _service.UpdatePersonnel(id, newPersonnel);
         if (!isUpdated) NotFound("Id Not Found");
         return Ok("Succesfully Updated");
